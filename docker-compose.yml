@@ -1,0 +1,55 @@
+version: '3.9'
+
+
+services:
+  db:
+    image: postgres
+    ports:
+      - '5432:5432'
+
+    environment:
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=Todo
+      
+  cache:
+    image: redis
+    ports:
+      - '6379:6379'
+
+  frontend:
+    build:
+      context: ./reacttodo
+      dockerfile: Dockerfile
+
+    ports:
+      - '3000:3000'
+
+    depends_on:
+      - backend
+
+  backend: 
+    build: 
+      context: ./TodoApi
+      dockerfile: Dockerfile
+    command: bash -c "
+        python manage.py makemigrations
+        && python manage.py migrate 
+        && python manage.py runserver 0.0.0.0:8000
+        "
+    environment:
+      - SECRET_KEY=2%!kcn4^asdu*0!iu8o$ee#4u00&j=cyd8ohd=6)5$)a#g8o7b
+      - DB_NAME=Todo
+      - DB_USER=postgres
+      - DB_PASSWORD=pass
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+
+    ports:
+      - '8000:8000'
+
+    depends_on:
+      - db
+      - cache
